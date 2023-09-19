@@ -1,0 +1,14 @@
+{
+	"tasks": {
+		"dev": "deno run -A scripts/dev.js"
+	},
+	"importMap": "importmap.json",
+	"fmt": {
+		"options": {
+			"indentWidth": 4,
+			"useTabs": true,
+			"lineWidth": 120,
+			"proseWrap": "preserve"
+		}
+	}
+}
