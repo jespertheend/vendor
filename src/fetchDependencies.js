@@ -2,10 +2,11 @@ import { parseImportSpecifiers } from "./parseImportSpecifiers.js";
 import { parseImportMap, resolveModuleSpecifier } from "https://deno.land/x/import_maps@v0.1.1/mod.js";
 
 /**
- * @typedef VendorOptions
- * @property {string[]} entryPoints
- * @property {boolean} [includeTypeImports]
- * @property {import("https://deno.land/x/import_maps@v0.1.1/mod.js").ImportMapData} [importMap]
+ * @typedef FetchDependenciesOptions
+ * @property {string[]} options.entryPoints
+ * @property {string} options.baseUrl
+ * @property {boolean} [options.includeTypeImports]
+ * @property {import("https://deno.land/x/import_maps@v0.1.1/mod.js").ImportMapData} [options.importMap]
  */
 
 /**
@@ -17,11 +18,7 @@ import { parseImportMap, resolveModuleSpecifier } from "https://deno.land/x/impo
 /**
  * Fetches all dependencies from the provided entry points.
  * This returns an async iterable which can be iterated over to yield all the results.
- * @param {Object} options
- * @param {string[]} options.entryPoints
- * @param {string} options.baseUrl
- * @param {boolean} [options.includeTypeImports]
- * @param {import("https://deno.land/x/import_maps@v0.1.1/mod.js").ImportMapData} [options.importMap]
+ * @param {FetchDependenciesOptions} options
  * @returns {AsyncIterable<FetchedDependency>}
  */
 export function fetchDependencies({
