@@ -42,7 +42,7 @@ export function fetchDependencies({
 	/**
 	 * @type {IteratorResult<FetchedDependency>[]}
 	 */
-	let iteratorResults = [];
+	const iteratorResults = [];
 	/** @type {Promise<IteratorResult<FetchedDependency>>?} */
 	let pendingNextPromise = null;
 	/** @type {((result: IteratorResult<FetchedDependency>) => void)?} */

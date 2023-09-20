@@ -33,7 +33,6 @@ Deno.test({
 	name: "fetches files and writes them to disk",
 	async fn() {
 		await tmpDirTest(async (dirPath) => {
-			console.log(dirPath);
 			try {
 				installMockFetch([
 					{

@@ -1,6 +1,8 @@
 {
 	"tasks": {
-		"dev": "deno run -A scripts/dev.js"
+		"dev": "deno run -A scripts/dev.js",
+		"test": "deno test --allow-read --allow-write test/",
+		"ci": "deno fmt --check && deno lint && deno task test"
 	},
 	"importMap": "importmap.json",
 	"fmt": {
@@ -10,5 +12,10 @@
 			"lineWidth": 120,
 			"proseWrap": "preserve"
 		}
+	},
+	"lint": {
+		"exclude": [
+			".denoTypes"
+		]
 	}
 }

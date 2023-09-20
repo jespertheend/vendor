@@ -24,9 +24,9 @@ export function installMockFetch(expectedRequests) {
 
 	/**
 	 * @param {RequestInfo} url
-	 * @param {RequestInit} [init]
 	 */
-	const mockFetch = async (url, init) => {
+	// deno-lint-ignore require-await
+	const mockFetch = async (url) => {
 		const response = currentExpectedRequests.shift();
 		let urlStr;
 		if (typeof url == "string") {

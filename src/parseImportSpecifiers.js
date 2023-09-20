@@ -5,8 +5,8 @@ import ts from "npm:typescript@5.2.2";
  */
 function* traverseAst(node) {
 	/** @type {ts.Node[]} */
-	let foundNodes = [];
-	// @ts-ignore
+	const foundNodes = [];
+	// @ts-ignore forEachChildRecursively is internal but we want to use it anyway
 	ts.forEachChildRecursively(node, (node) => {
 		foundNodes.push(node);
 	});
@@ -39,7 +39,7 @@ export function* parseImportSpecifiers(fileContent, includeTypeImports = false) 
 	if (includeTypeImports) {
 		for (const statement of sourceFile.statements) {
 			if ("jsDoc" in statement && statement.jsDoc) {
-				// @ts-ignore
+				// @ts-ignore JSDocArray is internal but we want to use it anyway
 				const jsDocArray = /** @type {ts.JSDocArray} */ (statement.jsDoc);
 				for (const item of jsDocArray) {
 					for (const node of traverseAst(item)) {
