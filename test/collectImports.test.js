@@ -16,13 +16,15 @@ export * from "foo8.ts";
 	import {e} from "foo10.ts";
 }
 
-import type {f} from "type1.js";
-import type * as g from "type2.js";
+import f from "./foo11.css" assert {type: "css"};
 
-/** @typedef {import("type3.js").h} h */
+import type {typeA} from "type1.js";
+import type * as typeB from "type2.js";
+
+/** @typedef {import("type3.js").typeC} h */
 
 /**
- * @param {import("type4.js").i} i
+ * @param {import("type4.js").typeD} i
  */
 function myFn(i) {}
 `;
@@ -38,6 +40,7 @@ const expectedSpecifiers = [
 	"foo8.ts",
 	"foo9.js",
 	"foo10.ts",
+	"./foo11.css",
 	"type1.js",
 	"type2.js",
 	"type3.js",
