@@ -28,15 +28,8 @@ export async function vendor(options) {
 	if (!fetchOptions.baseUrl) {
 		fetchOptions.baseUrl = toFileUrl(Deno.cwd()).href;
 	}
-	const outDir = resolve(options.outDir);
 	for await (const entry of fetchDependencies(fetchOptions)) {
-		const url = new URL(entry.url);
-		const urlHost = sanitizePathName(url.host);
-		let urlPath = sanitizePathName(url.pathname);
-		// The first character is always a '/', which we should remove.
-		// Otherwise it is used as an absolute path.
-		urlPath = urlPath.slice(1);
-		const outPath = resolve(outDir, urlHost, urlPath);
+		const outPath = urlToPathName(entry.url, options.outDir);
 		await ensureDir(dirname(outPath));
 		await Deno.writeTextFile(outPath, entry.content);
 	}
@@ -47,4 +40,20 @@ export async function vendor(options) {
  */
 function sanitizePathName(name) {
 	return name.replaceAll(/[<>:"|?*]/g, "_");
+}
+
+/**
+ * Returns a sanitized path that a file would get written to depending on its url.
+ * @param {string} url The url of the file that was downloaded.
+ * @param {string} outDir The root directory that all vendored files will get downloaded to.
+ */
+export function urlToPathName(url, outDir) {
+	const urlObj = new URL(url);
+	const urlHost = sanitizePathName(urlObj.host);
+	let urlPath = sanitizePathName(urlObj.pathname);
+	// The first character is always a '/', which we should remove.
+	// Otherwise it is used as an absolute path.
+	urlPath = urlPath.slice(1);
+	const outPath = resolve(outDir, urlHost, urlPath);
+	return outPath;
 }

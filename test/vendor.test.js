@@ -1,6 +1,6 @@
 import { assertEquals } from "$std/assert/mod.ts";
 import { resolve } from "$std/path/mod.ts";
-import { vendor } from "../src/vendor.js";
+import { urlToPathName, vendor } from "../src/vendor.js";
 import { installMockFetch, uninstallMockFetch } from "./shared/mockFetch.js";
 
 /**
@@ -61,5 +61,16 @@ Deno.test({
 			const exampleChildren = await getDirChildren(resolve(dirPath, "out", "example.com"));
 			assertEquals(exampleChildren, ["foo.js", "bar.js"]);
 		});
+	},
+});
+
+Deno.test({
+	name: "urlToPathName",
+	fn() {
+		const result1 = urlToPathName("https://example.com/foo.js", "./out");
+		assertEquals(result1, resolve("out/example.com/foo.js"));
+
+		const result2 = urlToPathName("https://example.com/foo:bar.js", "./out");
+		assertEquals(result2, resolve("out/example.com/foo_bar.js"));
 	},
 });
