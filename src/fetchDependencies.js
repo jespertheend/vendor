@@ -5,7 +5,9 @@ import { parseImportMap, resolveModuleSpecifier } from "https://deno.land/x/impo
  * @typedef FetchDependenciesOptions
  * @property {string[]} options.entryPoints
  * @property {string} options.baseUrl
- * @property {boolean} [options.includeTypeImports]
+ * @property {boolean} [options.includeTypeImports] Defaults to `false`. When set to true `true`,
+ * any statements like `import type {Foo} from "./foo.js"` will be ignored.
+ * Additionally, import statements found within JSDoc comments will be ignored as well.
  * @property {import("https://deno.land/x/import_maps@v0.1.1/mod.js").ImportMapData} [options.importMap]
  */
 

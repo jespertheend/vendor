@@ -10,10 +10,13 @@ import { ensureDir } from "https://deno.land/std@0.202.0/fs/mod.ts";
 
 /**
  * @typedef VendorOptions
- * @property {string} outDir
+ * @property {string} outDir The directory to write the files to.
  */
 
 /**
+ * Downloads a list of entry points and all dependencies and writes them to disk.
+ * Any import statements found in the downloaded files will be downloaded as well
+ * until the entire module graph has been downloaded.
  * @param {VendorOptions & Optional<import("./fetchDependencies.js").FetchDependenciesOptions, "baseUrl">} options
  */
 export async function vendor(options) {
