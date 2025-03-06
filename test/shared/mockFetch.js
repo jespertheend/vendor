@@ -5,7 +5,7 @@ const originalFetch = globalThis.fetch;
 /**
  * @typedef ExpectedFetchRequest
  * @property {string} url
- * @property {string} response
+ * @property {string | (() => Response)} response
  */
 
 let installed = false;
@@ -40,11 +40,15 @@ export function installMockFetch(expectedRequests) {
 
 		assertEquals(urlStr, response.url);
 
-		return new Response(response.response, {
-			headers: {
-				"content-type": "text/javascript",
-			},
-		});
+		if (typeof response.response == "function") {
+			return response.response();
+		} else {
+			return new Response(response.response, {
+				headers: {
+					"content-type": "text/javascript",
+				},
+			});
+		}
 	};
 	globalThis.fetch = /** @type {typeof fetch} */ (mockFetch);
 }

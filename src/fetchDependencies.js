@@ -42,13 +42,31 @@ export function fetchDependencies({
 	// - `next()` hasn't been called yet, so we add our result to a buffer of results,
 	//   once `next()` gets called again, we take an item from the buffer and return that immediately.
 	/**
-	 * @type {IteratorResult<FetchedDependency>[]}
+	 * @type {NextResult[]}
 	 */
 	const iteratorResults = [];
 	/** @type {Promise<IteratorResult<FetchedDependency>>?} */
 	let pendingNextPromise = null;
 	/** @type {((result: IteratorResult<FetchedDependency>) => void)?} */
 	let resolvePendingNextPromise = null;
+	/** @type {((error: unknown) => void)?} */
+	let rejectPendingNextPromise = null;
+
+	function clearNextPromise() {
+		resolvePendingNextPromise = null;
+		rejectPendingNextPromise = null;
+		pendingNextPromise = null;
+	}
+
+	/**
+	 * @typedef {{
+	 * 	type: "iteratorResult",
+	 * 	iteratorResult: IteratorResult<FetchedDependency>,
+	 * } | {
+	 * 	type: "error",
+	 * 	error: unknown,
+	 * }} NextResult
+	 */
 
 	/**
 	 * Passes an iterator result on to the caller of `next()`.
@@ -57,10 +75,27 @@ export function fetchDependencies({
 	function triggerNext(iteratorResult) {
 		if (resolvePendingNextPromise) {
 			resolvePendingNextPromise(iteratorResult);
-			resolvePendingNextPromise = null;
-			pendingNextPromise = null;
+			clearNextPromise();
 		} else {
-			iteratorResults.push(iteratorResult);
+			iteratorResults.push({
+				type: "iteratorResult",
+				iteratorResult,
+			});
+		}
+	}
+
+	/**
+	 * @param {unknown} error
+	 */
+	function rejectNext(error) {
+		if (rejectPendingNextPromise) {
+			rejectPendingNextPromise(error);
+			clearNextPromise();
+		} else {
+			iteratorResults.push({
+				type: "error",
+				error,
+			});
 		}
 	}
 
@@ -113,11 +148,15 @@ export function fetchDependencies({
 	// However, we do want to make sure the iterator returns. So we wait for all the created promises.
 	// Once all of them have been resolved we can be sure that no more dependencies will be fetched.
 	(async () => {
-		await Promise.all(promises);
-		triggerNext({
-			value: null,
-			done: true,
-		});
+		try {
+			await Promise.all(promises);
+			triggerNext({
+				value: null,
+				done: true,
+			});
+		} catch (error) {
+			rejectNext(error);
+		}
 	})();
 
 	return {
@@ -128,11 +167,20 @@ export function fetchDependencies({
 				 */
 				async next() {
 					const queuedResult = iteratorResults.shift();
-					if (queuedResult) return queuedResult;
+					if (queuedResult) {
+						if (queuedResult.type == "iteratorResult") {
+							return queuedResult.iteratorResult;
+						} else if (queuedResult.type == "error") {
+							throw queuedResult.error;
+						} else {
+							throw new Error("Unknown queued result type: " + queuedResult);
+						}
+					}
 
 					if (!pendingNextPromise) {
-						pendingNextPromise = new Promise((resolve) => {
+						pendingNextPromise = new Promise((resolve, reject) => {
 							resolvePendingNextPromise = resolve;
+							rejectPendingNextPromise = reject;
 						});
 					}
 					const result = await pendingNextPromise;

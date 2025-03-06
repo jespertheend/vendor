@@ -1,4 +1,4 @@
-import { assertEquals } from "$std/assert/mod.ts";
+import { assertEquals, assertRejects } from "$std/assert/mod.ts";
 import { fetchDependencies } from "../src/fetchDependencies.js";
 import { installMockFetch, uninstallMockFetch } from "./shared/mockFetch.js";
 
@@ -148,6 +148,35 @@ Deno.test({
 				"https://example.com/subA.js",
 				"https://example.com/subB.js",
 			]);
+		} finally {
+			uninstallMockFetch();
+		}
+	},
+});
+
+Deno.test({
+	name: "Failed fetches are catchable",
+	async fn() {
+		installMockFetch([
+			{
+				url: "https://example.com/notFound",
+				response: () => {
+					throw new Error("oh no");
+				},
+			},
+		]);
+
+		try {
+			await assertRejects(
+				async () => {
+					await fetchAll({
+						baseUrl: "https://example.com",
+						entryPoints: ["/notFound"],
+					});
+				},
+				Error,
+				"oh no",
+			);
 		} finally {
 			uninstallMockFetch();
 		}
