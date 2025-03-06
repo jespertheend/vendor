@@ -9,12 +9,26 @@ import { parseImportMap, resolveModuleSpecifier } from "https://deno.land/x/impo
  * any statements like `import type {Foo} from "./foo.js"` will be ignored.
  * Additionally, import statements found within JSDoc comments will be ignored as well.
  * @property {import("https://deno.land/x/import_maps@v0.1.1/mod.js").ImportMapData} [options.importMap]
+ * @property {((error: FetchError) => void) | "error" | "none"} [options.onFetchError] You can set this to either
+ * - `"error"` (which is the default) To immediately throw an error when a resource fails to fetch.
+ * This will abort the vendor process, resulting in a partially vendored directory.
+ * - `"none"` To ignore any failed fetches. Other resources will continue to be vendored like normal
+ * and only the failed request will be missing from the output directory.
+ * - A callback may also be provided, this has the same effect as providing `"none"` except that you
+ * will be notified when a resource fails to fetch. You may still abort the vendor process by throwing an
+ * error from within this callback.
  */
 
 /**
  * @typedef FetchedDependency
  * @property {string} content
  * @property {string} url
+ */
+
+/**
+ * @typedef FetchError
+ * @property {unknown} error The error that was thrown.
+ * @property {string} url The url that was tried to fetch.
  */
 
 /**
@@ -28,6 +42,7 @@ export function fetchDependencies({
 	baseUrl,
 	includeTypeImports = false,
 	importMap = {},
+	onFetchError = "error",
 }) {
 	const baseUrlObj = new URL(baseUrl);
 	const parsedImportMap = parseImportMap(importMap, new URL(baseUrl));
@@ -107,8 +122,23 @@ export function fetchDependencies({
 		if (fetchedUrls.has(url)) return;
 		fetchedUrls.add(url);
 
-		const response = await fetch(url);
-		const text = await response.text();
+		let text;
+		try {
+			const response = await fetch(url);
+			text = await response.text();
+		} catch (error) {
+			if (onFetchError == "error") {
+				throw error;
+			} else if (onFetchError == "none") {
+				return;
+			} else {
+				onFetchError({
+					error,
+					url,
+				});
+				return;
+			}
+		}
 		triggerNext({
 			value: {
 				url,

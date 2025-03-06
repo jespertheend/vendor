@@ -1,4 +1,4 @@
-import { assertEquals, assertRejects } from "$std/assert/mod.ts";
+import { assertEquals, assertInstanceOf, assertRejects } from "$std/assert/mod.ts";
 import { fetchDependencies } from "../src/fetchDependencies.js";
 import { installMockFetch, uninstallMockFetch } from "./shared/mockFetch.js";
 
@@ -177,6 +177,61 @@ Deno.test({
 				Error,
 				"oh no",
 			);
+		} finally {
+			uninstallMockFetch();
+		}
+	},
+});
+
+Deno.test({
+	name: "Failed fetches are ignored when onFetchError is none",
+	async fn() {
+		installMockFetch([
+			{
+				url: "https://example.com/notFound",
+				response: () => {
+					throw new Error("oh no");
+				},
+			},
+		]);
+
+		try {
+			await fetchAll({
+				baseUrl: "https://example.com",
+				entryPoints: ["/notFound"],
+				onFetchError: "none",
+			});
+		} finally {
+			uninstallMockFetch();
+		}
+	},
+});
+
+Deno.test({
+	name: "onFetchError callback is fired",
+	async fn() {
+		installMockFetch([
+			{
+				url: "https://example.com/notFound",
+				response: () => {
+					throw new Error("oh no");
+				},
+			},
+		]);
+
+		try {
+			/** @type {import("../src/fetchDependencies.js").FetchError[]} */
+			const calls = [];
+			await fetchAll({
+				baseUrl: "https://example.com",
+				entryPoints: ["/notFound"],
+				onFetchError: (e) => calls.push(e),
+			});
+			assertEquals(calls.length, 1);
+			const { url, error } = calls[0];
+			assertEquals(url, "https://example.com/notFound");
+			assertInstanceOf(error, Error);
+			assertEquals(error.message, "oh no");
 		} finally {
 			uninstallMockFetch();
 		}
