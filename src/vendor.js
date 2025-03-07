@@ -14,10 +14,17 @@ import { ensureDir } from "https://deno.land/std@0.202.0/fs/mod.ts";
  */
 
 /**
+ * @typedef VendoredFile
+ * @property {string} url The url of the resource that was downloaded.
+ * @property {string} path The absolute path to the file where the resource was saved.
+ */
+
+/**
  * Downloads a list of entry points and all dependencies and writes them to disk.
  * Any import statements found in the downloaded files will be downloaded as well
  * until the entire module graph has been downloaded.
  * @param {VendorOptions & Optional<import("./fetchDependencies.js").FetchDependenciesOptions, "baseUrl">} options
+ * @returns {Promise<VendoredFile[]>}
  */
 export async function vendor(options) {
 	/** @type {import("./fetchDependencies.js").FetchDependenciesOptions} */
@@ -28,11 +35,18 @@ export async function vendor(options) {
 	if (!fetchOptions.baseUrl) {
 		fetchOptions.baseUrl = toFileUrl(Deno.cwd()).href;
 	}
+	/** @type {VendoredFile[]} */
+	const results = [];
 	for await (const entry of fetchDependencies(fetchOptions)) {
 		const outPath = urlToPathName(entry.url, options.outDir);
 		await ensureDir(dirname(outPath));
 		await Deno.writeTextFile(outPath, entry.content);
+		results.push({
+			url: entry.url,
+			path: outPath,
+		});
 	}
+	return results;
 }
 
 /**
