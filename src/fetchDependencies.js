@@ -8,7 +8,9 @@ import { parseImportMap, resolveModuleSpecifier } from "https://deno.land/x/impo
  * @property {boolean} [options.includeTypeImports] Defaults to `false`. When set to true `true`,
  * any statements like `import type {Foo} from "./foo.js"` will be ignored.
  * Additionally, import statements found within JSDoc comments will be ignored as well.
- * @property {import("https://deno.land/x/import_maps@v0.1.1/mod.js").ImportMapData} [options.importMap]
+ * @property {import("https://deno.land/x/import_maps@v0.1.1/mod.js").ImportMapData} [options.importMap] Json data from the
+ * import map which should be used for resolving specifiers.
+ * @property {import("https://deno.land/x/import_maps@v0.1.1/mod.js").ParsedImportMap} [options.parsedImportMap]
  * @property {((error: FetchError) => void) | "error" | "none"} [options.onFetchError] You can set this to either
  * - `"error"` (which is the default) To immediately throw an error when a resource fails to fetch.
  * This will abort the vendor process, resulting in a partially vendored directory.
@@ -41,11 +43,18 @@ export function fetchDependencies({
 	entryPoints,
 	baseUrl,
 	includeTypeImports = false,
-	importMap = {},
+	importMap,
+	parsedImportMap,
 	onFetchError = "error",
 }) {
+	if (importMap && parsedImportMap) {
+		throw new Error("The importMap and parsedImportMap options are mutually exclusive");
+	}
 	const baseUrlObj = new URL(baseUrl);
-	const parsedImportMap = parseImportMap(importMap, new URL(baseUrl));
+	if (!parsedImportMap) {
+		if (!importMap) importMap = {};
+		parsedImportMap = parseImportMap(importMap, new URL(baseUrl));
+	}
 	/** @type {Set<string>} */
 	const fetchedUrls = new Set();
 

@@ -1,4 +1,5 @@
 import { assertEquals, assertInstanceOf, assertRejects } from "$std/assert/mod.ts";
+import { parseImportMap } from "https://deno.land/x/import_maps@v0.1.1/mod.js";
 import { fetchDependencies } from "../src/fetchDependencies.js";
 import { installMockFetch, uninstallMockFetch } from "./shared/mockFetch.js";
 
@@ -232,6 +233,91 @@ Deno.test({
 			assertEquals(url, "https://example.com/notFound");
 			assertInstanceOf(error, Error);
 			assertEquals(error.message, "oh no");
+		} finally {
+			uninstallMockFetch();
+		}
+	},
+});
+
+Deno.test({
+	name: "Throws when both importMap and parsedImportMap are provided",
+	async fn() {
+		await assertRejects(
+			async () => {
+				const asyncIterable = fetchDependencies({
+					baseUrl: "https://example.com",
+					importMap: {},
+					parsedImportMap: {},
+				});
+				for await (const _ of asyncIterable) {
+					// Iterate over the entries to catch the error
+				}
+			},
+			Error,
+			"The importMap and parsedImportMap options are mutually exclusive",
+		);
+	},
+});
+
+Deno.test({
+	name: "Import maps are used",
+	async fn() {
+		installMockFetch([
+			{
+				url: "https://example.com/foo.js",
+				response: "foo",
+			},
+		]);
+
+		try {
+			const results = await fetchAll({
+				baseUrl: "https://example.com",
+				entryPoints: ["@foo"],
+				importMap: {
+					imports: {
+						"@foo": "https://example.com/foo.js",
+					},
+				},
+			});
+			assertEquals(results, [
+				{
+					url: "https://example.com/foo.js",
+					content: "foo",
+				},
+			]);
+		} finally {
+			uninstallMockFetch();
+		}
+	},
+});
+
+Deno.test({
+	name: "Parsed import maps are used",
+	async fn() {
+		const parsedImportMap = parseImportMap({
+			imports: {
+				"@foo": "https://example.com/foo.js",
+			},
+		});
+		installMockFetch([
+			{
+				url: "https://example.com/foo.js",
+				response: "foo",
+			},
+		]);
+
+		try {
+			const results = await fetchAll({
+				baseUrl: "https://example.com",
+				entryPoints: ["@foo"],
+				parsedImportMap,
+			});
+			assertEquals(results, [
+				{
+					url: "https://example.com/foo.js",
+					content: "foo",
+				},
+			]);
 		} finally {
 			uninstallMockFetch();
 		}
