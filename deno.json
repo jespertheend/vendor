@@ -11,7 +11,8 @@
 			"useTabs": true,
 			"lineWidth": 120,
 			"proseWrap": "preserve"
-		}
+		},
+		"exclude": [".github/**/*.yml"]
 	},
 	"lint": {
 		"exclude": [
